@@ -1,5 +1,6 @@
 import mock
 import unittest
+from execo import Host
 from deploy5k import deploy
 from deploy5k.error import MissingNetworkError
 
@@ -18,7 +19,7 @@ class TestConcretizeNetwork(unittest.TestCase):
             }]
         }
 
-    def test_exact(self):
+    def testact(self):
         networks = [
             { "site": "rennes", "vlan_id": 4},
             { "site": "rennes", "vlan_id": 5}
@@ -63,36 +64,37 @@ class TestConcretizeNodes(unittest.TestCase):
             }],
         }
 
-    def test_exact(self):
-        nodes = ["foocluster-1", "barcluster-2"]
+    def testact(self):
+        nodes = [Host("foocluster-1"), Host("barcluster-2")]
         c_resources = deploy.concretize_nodes(self.resources, nodes)
         self.assertItemsEqual(c_resources["machines"][0]["_c_nodes"],
-                              ["foocluster-1"])
+                              [Host("foocluster-1")])
         self.assertItemsEqual(c_resources["machines"][1]["_c_nodes"],
-                              ["barcluster-2"])
+                              [Host("barcluster-2")])
 
     def test_one_missing(self):
-        nodes = ["foocluster-1"]
+        nodes = [Host("foocluster-1")]
         c_resources = deploy.concretize_nodes(self.resources, nodes)
         self.assertItemsEqual(c_resources["machines"][0]["_c_nodes"],
-                              ["foocluster-1"])
+                              [Host("foocluster-1")])
         self.assertItemsEqual(c_resources["machines"][1]["_c_nodes"], [])
 
 
     def test_same_cluster(self):
-        nodes = ["foocluster-1", "foocluster-2"]
+        nodes = [Host("foocluster-1"), Host("foocluster-2")]
         self.resources["machines"][1]["cluster"] = "foocluster"
         c_resources = deploy.concretize_nodes(self.resources, nodes)
         self.assertItemsEqual(c_resources["machines"][0]["_c_nodes"],
-                              ["foocluster-1"])
-        self.assertItemsEqual(c_resources["machines"][1]["_c_nodes"], ["foocluster-2"])
+                              [Host("foocluster-1")])
+        self.assertItemsEqual(c_resources["machines"][1]["_c_nodes"], [Host("foocluster-2")])
 
     def test_not_order_dependent(self):
-        nodes = ["foocluster-1", "foocluster-2", "foocluster-3"]
+        nodes = [Host("foocluster-1"), Host("foocluster-2"), Host("foocluster-3")]
         self.resources["machines"][0]["nodes"] = 2
         c_resources_1 = deploy.concretize_nodes(self.resources, nodes)
-        nodes = ["foocluster-2", "foocluster-3", "foocluster-1"]
+        nodes = [Host("foocluster-2"), Host("foocluster-3"), Host("foocluster-1")]
         self.resources["machines"][0]["nodes"] = 2
         c_resources_2 = deploy.concretize_nodes(self.resources, nodes)
+
         self.assertItemsEqual(c_resources_1["machines"][0]["_c_nodes"],
                               c_resources_2["machines"][0]["_c_nodes"])
