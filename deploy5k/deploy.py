@@ -27,29 +27,6 @@ def reserve(resources,
     c_resources = concretize_resources(resources, gridjob)
     return c_resources
 
-def get_or_create_job(resources, job_name, walltime):
-    gridjob, _ = ex5.planning.get_job_by_name(job_name)
-    if gridjob is None:
-        gridjob = make_reservation(resources, job_name, walltime)
-    logging.info("Waiting for oargridjob %s to start" % gridjob)
-    ex5.wait_oargrid_job_start(gridjob)
-    return gridjob
-
-
-def concretize_resources(resources, gridjob):
-    nodes = ex5.get_oargrid_job_nodes(gridjob)
-    c_resources = concretize_nodes(resources, nodes)
-
-    job_sites = ex5.get_oargrid_job_oar_jobs(gridjob)
-    vlans = []
-    for (job_id, site) in job_sites:
-        vlan_ids = ex5.get_oar_job_kavlan(job_id, site)
-        vlans.extend([{
-            "site": site,
-            "vlan_id": vlan_id} for vlan_id in vlan_ids])
-
-    c_resources = concretize_networks(c_resources, vlans)
-    return c_resources
 
 def deploy(c_resources, env_name=ENV_NAME, force_deploy=False):
     c_resources = copy.deepcopy(c_resources)
@@ -75,6 +52,38 @@ def deploy(c_resources, env_name=ENV_NAME, force_deploy=False):
 
     return c_resources
 
+
+def configure_network(c_resources, dhcp=False):
+    c_resources = copy.deepcopy(c_resources)
+    c_resources = mount_nics(c_resources)
+    # TODO(msimonin): run dhcp if asked
+    return c_resources
+
+
+def get_or_create_job(resources, job_name, walltime):
+    gridjob, _ = ex5.planning.get_job_by_name(job_name)
+    if gridjob is None:
+        gridjob = make_reservation(resources, job_name, walltime)
+    logging.info("Waiting for oargridjob %s to start" % gridjob)
+    ex5.wait_oargrid_job_start(gridjob)
+    return gridjob
+
+
+def concretize_resources(resources, gridjob):
+    nodes = ex5.get_oargrid_job_nodes(gridjob)
+    c_resources = concretize_nodes(resources, nodes)
+
+    job_sites = ex5.get_oargrid_job_oar_jobs(gridjob)
+    vlans = []
+    for (job_id, site) in job_sites:
+        vlan_ids = ex5.get_oar_job_kavlan(job_id, site)
+        vlans.extend([{
+            "site": site,
+            "vlan_id": vlan_id} for vlan_id in vlan_ids])
+
+    c_resources = concretize_networks(c_resources, vlans)
+    return c_resources
+
 def _deploy(nodes, force_deploy, options):
     # For testing purpose
     logging.info("Deploying %s with options %s" % (nodes, options))
@@ -83,7 +92,6 @@ def _deploy(nodes, force_deploy, options):
 
 
 def mount_nics(c_resources):
-    c_resources = copy.deepcopy(c_resources)
     machines = c_resources["machines"]
     networks = c_resources["networks"]
     for desc in machines:
