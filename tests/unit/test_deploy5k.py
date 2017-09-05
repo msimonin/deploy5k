@@ -41,7 +41,7 @@ class TestDeploy(unittest.TestCase):
         c_resources = {
             "machines": [{
                 "_c_nodes": nodes,
-                "primary_networks": "network1"
+                "primary_network": "network1"
             }],
             "networks": [{"type": PROD, "role": "network1"}]
         }
@@ -58,7 +58,7 @@ class TestDeploy(unittest.TestCase):
         c_resources = {
             "machines": [{
                 "_c_nodes": nodes,
-                "primary_networks": "network1"
+                "primary_network": "network1"
             }],
             "networks": [{"type": KAVLAN, "role": "network1", "_c_network": {"site": "rennes", "vlan_id": 4}}]
         }
@@ -76,10 +76,10 @@ class TestDeploy(unittest.TestCase):
         c_resources = {
             "machines": [{
                 "_c_nodes": nodes_foo,
-                "primary_networks": "network1"
+                "primary_network": "network1"
             },{
                 "_c_nodes" : nodes_bar,
-                "primary_networks": "network2"
+                "primary_network": "network2"
                 }
             ],
             "networks": [

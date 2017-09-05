@@ -9,6 +9,7 @@ from operator import add, itemgetter
 from schema import validate_schema, PROD, KAVLAN_GLOBAL, KAVLAN_LOCAL, KAVLAN
 
 ENV_NAME = "jessie-x64-min"
+JOB_NAME = "deploy5k"
 
 def to_vlan_type(vlan_id):
     if vlan_id < 4:
@@ -17,10 +18,14 @@ def to_vlan_type(vlan_id):
         return KAVLAN
     return KAVLAN_GLOBAL
 
-
-def get_or_create_job(jobname, resources):
+def reserve(resources, job_name=JOB_NAME):
     validate_schema(resources)
-    gridjob, _ = ex5.planning.get_job_by_name(jobname)
+    gridjob = get_or_create_job(resources, job_name)
+    c_resources = concretize_resources(resources, gridjob)
+    return c_resources
+
+def get_or_create_job(resources, job_name):
+    gridjob, _ = ex5.planning.get_job_by_name(job_name)
     if gridjob is None:
         gridjob = make_reservation(resources)
     logging.info("Waiting for oargridjob %s to start" % gridjob)
@@ -28,7 +33,7 @@ def get_or_create_job(jobname, resources):
     return gridjob
 
 
-def concretize_resources(gridjob, resources):
+def concretize_resources(resources, gridjob):
     nodes = ex5.get_oargrid_job_nodes(gridjob)
     c_resources = concretize_nodes(resources, nodes)
 
@@ -103,7 +108,6 @@ def _mount_nics(desc, networks):
                            nodes_to_set,
                            nic,
                            vlan_id)
-                           
         # recording the mapping, just in case
         desc["_c_nics"].append((nic, network_role))
         idx = idx + 1
