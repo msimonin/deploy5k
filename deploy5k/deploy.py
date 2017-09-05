@@ -3,6 +3,7 @@ import execo_g5k as ex5
 import execo_g5k.api_utils as api
 import logging
 from deploy5k.error import MissingNetworkError
+from execo import Host
 from itertools import groupby
 from operator import add, itemgetter
 from schema import validate_schema, PROD, KAVLAN_GLOBAL, KAVLAN_LOCAL, KAVLAN
@@ -22,6 +23,7 @@ def get_or_create_job(jobname, resources):
     gridjob, _ = ex5.planning.get_job_by_name(jobname)
     if gridjob is None:
         gridjob = make_reservation(resources)
+    logging.info("Waiting for oargridjob %s to start" % gridjob)
     ex5.wait_oargrid_job_start(gridjob)
     return gridjob
 
@@ -45,7 +47,7 @@ def deploy(c_resources):
     c_resources = copy.deepcopy(c_resources)
     machines = c_resources["machines"]
     networks = c_resources["networks"]
-    key = itemgetter("primary_networks")
+    key = itemgetter("primary_network")
     s_machines = sorted(machines, key=key)
     for primary_network, i_descs in groupby(s_machines, key=key):
         descs = list(i_descs)
@@ -67,6 +69,7 @@ def deploy(c_resources):
 
 def _deploy(nodes, options):
     # For testing purpose
+    logging.info("Deploying %s with options %s" % (nodes, options))
     dep = ex5.Deployment(nodes, **options)
     return ex5.deploy(dep)
 
@@ -93,17 +96,21 @@ def _mount_nics(desc, networks):
             # nothing to do
             continue
         nic = nics[idx]
+        nodes_to_set = [Host(n) for n in desc["_c_nodes"]]
+        vlan_id = net["_c_network"]["vlan_id"]
+        logging.info("Settings %s in vlan id %s for nodes %s" % (nic, vlan_id, nodes_to_set))
         api.set_nodes_vlan(site,
-                           desc["_c_nodes"],
+                           nodes_to_set,
                            nic,
-                           net["_c_network"]["vlan_id"])
+                           vlan_id)
+                           
         # recording the mapping, just in case
         desc["_c_nics"].append((nic, network_role))
         idx = idx + 1
 
 def get_cluster_interfaces(cluster, extra_cond=lambda nic: True):
-    site = EX5.get_cluster_site(cluster)
-    nics = EX5.get_resource_attributes(
+    site = ex5.get_cluster_site(cluster)
+    nics = ex5.get_resource_attributes(
         "/sites/%s/clusters/%s/nodes" % (site, cluster))
     nics = nics['items'][0]['network_adapters']
     nics = [nic['device'] for nic in nics
@@ -165,7 +172,7 @@ def concretize_networks(resources, vlans):
         n_type = desc["type"]
         if n_type == PROD:
             desc["_c_network"] = {"site": site, "vlan_id": None}
-            desc["_c_network"].update(site_info["default"])
+            desc["_c_network"].update(site_info["kavlans"]["default"])
         else:
             networks = pick_things(pools, (site, n_type), 1)
             if len(networks) < 1:
