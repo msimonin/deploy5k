@@ -35,7 +35,7 @@ SCHEMA = {
                 "items": {"type": "string"},
                 "uniqueItems": True}
         },
-        "required": ["nodes", "cluster"]
+        "required": ["nodes", "cluster", "primary_network", "secondary_networks"]
     },
     "network": {
         "type": "object",
