@@ -181,10 +181,9 @@
     c_resources = mount_nics(c_resources)
     print(json.dumps(c_resources, indent=4))
 
-
     """
     {
-        networks": [
+        "networks": [
             {
                 "role": "network1",
                 "type": "prod",
@@ -223,6 +222,10 @@
             {
                 "_c_nics": [
                     [
+                        "eth0",
+                        "network1"
+                    ],
+                    [
                         "eth1",
                         "network2"
                     ],
@@ -233,12 +236,12 @@
                 ],
                 "primary_network": "network1",
                 "_c_deployed": [
-                    "grisou-46.nancy.grid5000.fr"
+                    "grisou-51.nancy.grid5000.fr"
                 ],
                 "cluster": "grisou",
                 "role": "compute",
                 "_c_nodes": [
-                    "grisou-46.nancy.grid5000.fr"
+                    "grisou-51.nancy.grid5000.fr"
                 ],
                 "nodes": 1,
                 "_c_undeployed": [],
@@ -250,6 +253,10 @@
             {
                 "_c_nics": [
                     [
+                        "eth0",
+                        "network1"
+                    ],
+                    [
                         "eth1",
                         "network2"
                     ],
@@ -260,12 +267,12 @@
                 ],
                 "primary_network": "network1",
                 "_c_deployed": [
-                    "grisou-49.nancy.grid5000.fr"
+                    "grisou-8.nancy.grid5000.fr"
                 ],
                 "cluster": "grisou",
                 "role": "control",
                 "_c_nodes": [
-                    "grisou-49.nancy.grid5000.fr"
+                    "grisou-8.nancy.grid5000.fr"
                 ],
                 "nodes": 1,
                 "_c_undeployed": [],
