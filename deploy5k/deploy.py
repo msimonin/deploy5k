@@ -97,16 +97,17 @@ def mount_nics(c_resources):
     for desc in machines:
         primary_nic = get_cluster_interfaces(desc["cluster"], lambda nic: nic['mounted'])[0]
         desc["_c_nics"] = [(primary_nic, desc["primary_network"])]
-        _mount_nics(desc, networks)
+        _mount_secondary_nics(desc, networks)
     return c_resources
 
 
-def _mount_nics(desc, networks):
+def _mount_secondary_nics(desc, networks):
     cluster = desc["cluster"]
     site = ex5.get_cluster_site(cluster)
     # get only the secondary interfaces
     nics = get_cluster_interfaces(cluster, lambda nic: not nic['mounted'])
     idx = 0
+    desc["_c_nics"] = desc.get("_c_nics") or []
     for network_role in desc["secondary_networks"]:
         net = lookup_networks(network_role, networks)
         if net["type"] == PROD:

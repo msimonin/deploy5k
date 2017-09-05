@@ -31,7 +31,7 @@ class TestMountNics(unittest.TestCase):
         deploy.get_cluster_interfaces = mock.Mock(return_value=["eth0", "eth1"])
         ex5.get_cluster_site = mock.Mock(return_value="rennes")
         api.set_nodes_vlan = mock.Mock()
-        deploy._mount_nics(desc, networks)
+        deploy._mount_secondary_nics(desc, networks)
         self.assertItemsEqual([("eth0", "network_1"), ("eth1", "network_2")], desc["_c_nics"])
 
 class TestDeploy(unittest.TestCase):
@@ -49,7 +49,7 @@ class TestDeploy(unittest.TestCase):
         undeployed = set()
         deploy._deploy = mock.Mock(return_value=(deployed, undeployed))
         c_resources = deploy.deploy(c_resources)
-        deploy._deploy.assert_called_with(nodes, {"env_name": deploy.ENV_NAME})
+        deploy._deploy.assert_called_with(nodes, False, {"env_name": deploy.ENV_NAME})
         self.assertItemsEqual(deployed, c_resources["machines"][0]["_c_deployed"])
         self.assertItemsEqual(undeployed, c_resources["machines"][0]["_c_undeployed"])
 
@@ -66,7 +66,7 @@ class TestDeploy(unittest.TestCase):
         undeployed = set()
         deploy._deploy = mock.Mock(return_value=(deployed, undeployed))
         c_resources = deploy.deploy(c_resources)
-        deploy._deploy.assert_called_with(nodes, {"env_name": deploy.ENV_NAME, "vlan": 4})
+        deploy._deploy.assert_called_with(nodes, False, {"env_name": deploy.ENV_NAME, "vlan": 4})
         self.assertItemsEqual(deployed, c_resources["machines"][0]["_c_deployed"])
         self.assertItemsEqual(undeployed, c_resources["machines"][0]["_c_undeployed"])
 
