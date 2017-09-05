@@ -10,6 +10,7 @@ from schema import validate_schema, PROD, KAVLAN_GLOBAL, KAVLAN_LOCAL, KAVLAN
 
 ENV_NAME = "jessie-x64-min"
 JOB_NAME = "deploy5k"
+WALLTIME = "02:00:00"
 
 def to_vlan_type(vlan_id):
     if vlan_id < 4:
@@ -18,16 +19,18 @@ def to_vlan_type(vlan_id):
         return KAVLAN
     return KAVLAN_GLOBAL
 
-def reserve(resources, job_name=JOB_NAME):
+def reserve(resources,
+            job_name=JOB_NAME,
+            walltime=WALLTIME):
     validate_schema(resources)
-    gridjob = get_or_create_job(resources, job_name)
+    gridjob = get_or_create_job(resources, job_name, walltime)
     c_resources = concretize_resources(resources, gridjob)
     return c_resources
 
-def get_or_create_job(resources, job_name):
+def get_or_create_job(resources, job_name, walltime):
     gridjob, _ = ex5.planning.get_job_by_name(job_name)
     if gridjob is None:
-        gridjob = make_reservation(resources)
+        gridjob = make_reservation(resources, job_name, walltime)
     logging.info("Waiting for oargridjob %s to start" % gridjob)
     ex5.wait_oargrid_job_start(gridjob)
     return gridjob
@@ -48,7 +51,7 @@ def concretize_resources(resources, gridjob):
     c_resources = concretize_networks(c_resources, vlans)
     return c_resources
 
-def deploy(c_resources):
+def deploy(c_resources, env_name=ENV_NAME, force_deploy=False):
     c_resources = copy.deepcopy(c_resources)
     machines = c_resources["machines"]
     networks = c_resources["networks"]
@@ -60,23 +63,23 @@ def deploy(c_resources):
         nodes = reduce(add, nodes)
         net = lookup_networks(primary_network, networks)
         options = {
-            "env_name": ENV_NAME
+            "env_name": env_name
         }
         if net["type"] != PROD:
             options.update({"vlan": net["_c_network"]["vlan_id"]})
         # Yes, this is sequential
-        deployed, undeployed = _deploy(nodes, options)
+        deployed, undeployed = _deploy(nodes, force_deploy, options)
         for desc in descs:
             desc["_c_deployed"] = list(set(desc["_c_nodes"]) & set(deployed))
             desc["_c_undeployed"] = list(set(desc["_c_nodes"]) & set(undeployed))
 
     return c_resources
 
-def _deploy(nodes, options):
+def _deploy(nodes, force_deploy, options):
     # For testing purpose
     logging.info("Deploying %s with options %s" % (nodes, options))
     dep = ex5.Deployment(nodes, **options)
-    return ex5.deploy(dep)
+    return ex5.deploy(dep, check_deployed_command=not force_deploy)
 
 
 def mount_nics(c_resources):
@@ -189,7 +192,7 @@ def concretize_networks(resources, vlans):
     return c_resources
 
 
-def make_reservation(resources):
+def make_reservation(resources, job_name, walltime):
     machines = resources["machines"]
     networks = resources["networks"]
 
@@ -211,13 +214,13 @@ def make_reservation(resources):
         criteria.setdefault(site, []).append(criterion)
 
     jobs_specs = [(ex5.OarSubmission(resources='+'.join(c),
-                                 name="test"), s)
+                                 name=job_name), s)
                     for s, c in criteria.items()]
 
     # Make the reservation
     gridjob, _ = ex5.oargridsub(
         jobs_specs,
-        walltime="02:00:00".encode('ascii', 'ignore'),
+        walltime=walltime.encode('ascii', 'ignore'),
         job_type='deploy')
 
     if gridjob is None:
