@@ -1,6 +1,6 @@
 from deploy5k import api
 from deploy5k import utils
-from deploy5k.schema import PROD, KAVLAN_GLOBAL, KAVLAN_LOCAL, KAVLAN
+from deploy5k.schema import PROD, KAVLAN
 import mock
 import unittest
 

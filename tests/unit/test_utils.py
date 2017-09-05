@@ -1,6 +1,6 @@
 from deploy5k import utils
 from deploy5k.error import MissingNetworkError
-from deploy5k.schema import PROD, KAVLAN_GLOBAL, KAVLAN_LOCAL, KAVLAN
+from deploy5k.schema import KAVLAN
 from execo import Host
 from execo_g5k import api_utils as api
 import mock
@@ -63,7 +63,7 @@ class TestConcretizeNetwork(unittest.TestCase):
             { "site": "rennes", "vlan_id": 4},
         ]
         with self.assertRaises(MissingNetworkError):
-            c_resources = utils.concretize_networks(self.resources, networks)
+            utils.concretize_networks(self.resources, networks)
 
     def test_not_order_dependent(self):
         networks_1 = [
