@@ -1,10 +1,13 @@
 import copy
 import execo_g5k as ex5
 import execo_g5k.api_utils as api
-from itertools import groupby
-from schema import validate_schema, PROD, KAVLAN_GLOBAL, KAVLAN_LOCAL, KAVLAN
+import logging
 from deploy5k.error import MissingNetworkError
+from itertools import groupby
+from operator import add, itemgetter
+from schema import validate_schema, PROD, KAVLAN_GLOBAL, KAVLAN_LOCAL, KAVLAN
 
+ENV_NAME = "jessie-x64-min"
 
 def to_vlan_type(vlan_id):
     if vlan_id < 4:
@@ -38,6 +41,84 @@ def concretize_resources(gridjob, resources):
     c_resources = concretize_networks(c_resources, vlans)
     return c_resources
 
+def deploy(c_resources):
+    c_resources = copy.deepcopy(c_resources)
+    machines = c_resources["machines"]
+    networks = c_resources["networks"]
+    key = itemgetter("primary_networks")
+    s_machines = sorted(machines, key=key)
+    for primary_network, i_descs in groupby(s_machines, key=key):
+        descs = list(i_descs)
+        nodes = [desc["_c_nodes"] for desc in descs]
+        nodes = reduce(add, nodes)
+        net = lookup_networks(primary_network, networks)
+        options = {
+            "env_name": ENV_NAME
+        }
+        if net["type"] != PROD:
+            options.update({"vlan": net["_c_network"]["vlan_id"]})
+        # Yes, this is sequential
+        deployed, undeployed = _deploy(nodes, options)
+        for desc in descs:
+            desc["_c_deployed"] = list(set(desc["_c_nodes"]) & set(deployed))
+            desc["_c_undeployed"] = list(set(desc["_c_nodes"]) & set(undeployed))
+
+    return c_resources
+
+def _deploy(nodes, options):
+    # For testing purpose
+    dep = ex5.Deployment(nodes, **options)
+    return ex5.deploy(dep)
+
+
+def mount_nics(c_resources):
+    c_resources = copy.deepcopy(c_resources)
+    machines = c_resources["machines"]
+    networks = c_resources["networks"]
+    for desc in machines:
+        _mount_nics(desc, networks)
+    return c_resources
+
+
+def _mount_nics(desc, networks):
+    cluster = desc["cluster"]
+    site = ex5.get_cluster_site(cluster)
+    # get only the secondary interfaces
+    nics = get_cluster_interfaces(cluster, lambda nic: not nic['mounted'])
+    idx = 0
+    desc["_c_nics"] = []
+    for network_role in desc["secondary_networks"]:
+        net = lookup_networks(network_role, networks)
+        if net["type"] == PROD:
+            # nothing to do
+            continue
+        nic = nics[idx]
+        api.set_nodes_vlan(site,
+                           desc["_c_nodes"],
+                           nic,
+                           net["_c_network"]["vlan_id"])
+        # recording the mapping, just in case
+        desc["_c_nics"].append((nic, network_role))
+        idx = idx + 1
+
+def get_cluster_interfaces(cluster, extra_cond=lambda nic: True):
+    site = EX5.get_cluster_site(cluster)
+    nics = EX5.get_resource_attributes(
+        "/sites/%s/clusters/%s/nodes" % (site, cluster))
+    nics = nics['items'][0]['network_adapters']
+    nics = [nic['device'] for nic in nics
+           if nic['mountable'] and
+           nic['interface'] == 'Ethernet' and
+           not nic['management'] and extra_cond(nic)]
+    nics = sorted(nics)
+    return nics
+
+
+def lookup_networks(network_role, networks):
+    match = [net for net in networks if net["role"] == network_role]
+    # if it has been validated the following is valid
+    return match[0]
+
 
 def mk_pools(things, keyfnc=lambda x: x):
     "Indexes a thing by the keyfnc to construct pools of things."
@@ -49,7 +130,7 @@ def mk_pools(things, keyfnc=lambda x: x):
 
 
 def pick_things(pools, key,  n):
-    "Picks a maximum of n things in a pool of indexed things."
+    "Picks a maximum of n things in a dict of indexed pool of things."
     pool = pools.get(key)
     if not pool:
         return []
@@ -68,23 +149,32 @@ def concretize_nodes(resources, nodes):
         cluster = desc["cluster"]
         nb = desc["nodes"]
         c_nodes = pick_things(pools, cluster, nb)
-        desc["_c_nodes"] = c_nodes
+        #  put concrete hostnames here
+        desc["_c_nodes"] = [c_node.address for c_node in c_nodes]
     return c_resources
 
 
 def concretize_networks(resources, vlans):
     c_resources = copy.deepcopy(resources)
     s_vlans = sorted(vlans, key=lambda v: (v["site"], v["vlan_id"]))
-    no_prod = [n for n in c_resources["networks"] if n["type"] != PROD]
     pools = mk_pools(s_vlans,
                      lambda n: (n["site"], to_vlan_type(n["vlan_id"])))
-    for desc in no_prod:
+    for desc in c_resources["networks"]:
         site = desc["site"]
+        site_info = ex5.get_resource_attributes('/sites/%s' % site)
         n_type = desc["type"]
-        networks = pick_things(pools, (site, n_type), 1)
-        if len(networks) < 1:
-            raise MissingNetworkError(site, n_type)
-        desc["_c_vlan_id"] = networks[0]
+        if n_type == PROD:
+            desc["_c_network"] = {"site": site, "vlan_id": None}
+            desc["_c_network"].update(site_info["default"])
+        else:
+            networks = pick_things(pools, (site, n_type), 1)
+            if len(networks) < 1:
+                raise MissingNetworkError(site, n_type)
+            # concretize the network
+            desc["_c_network"] = networks[0]
+            vlan_id = desc["_c_network"]["vlan_id"]
+            desc["_c_network"].update(site_info["kavlans"][str(vlan_id)])
+
     return c_resources
 
 
