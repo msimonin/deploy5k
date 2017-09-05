@@ -5,7 +5,6 @@ import logging
 from deploy5k.error import MissingNetworkError
 from execo import Host
 from itertools import groupby
-from operator import add, itemgetter
 from schema import PROD, KAVLAN_GLOBAL, KAVLAN_LOCAL, KAVLAN
 
 
@@ -19,6 +18,7 @@ def to_vlan_type(vlan_id):
     elif vlan_id < 10:
         return KAVLAN
     return KAVLAN_GLOBAL
+
 
 def get_or_create_job(resources, job_name, walltime):
     gridjob, _ = ex5.planning.get_job_by_name(job_name)
@@ -44,6 +44,7 @@ def concretize_resources(resources, gridjob):
     c_resources = concretize_networks(c_resources, vlans)
     return c_resources
 
+
 def _deploy(nodes, force_deploy, options):
     # For testing purpose
     logging.info("Deploying %s with options %s" % (nodes, options))
@@ -55,7 +56,8 @@ def mount_nics(c_resources):
     machines = c_resources["machines"]
     networks = c_resources["networks"]
     for desc in machines:
-        primary_nic = get_cluster_interfaces(desc["cluster"], lambda nic: nic['mounted'])[0]
+        primary_nic = get_cluster_interfaces(desc["cluster"],
+                                             lambda nic: nic['mounted'])[0]
         desc["_c_nics"] = [(primary_nic, desc["primary_network"])]
         _mount_secondary_nics(desc, networks)
     return c_resources
@@ -76,7 +78,9 @@ def _mount_secondary_nics(desc, networks):
         nic = nics[idx]
         nodes_to_set = [Host(n) for n in desc["_c_nodes"]]
         vlan_id = net["_c_network"]["vlan_id"]
-        logging.info("Settings %s in vlan id %s for nodes %s" % (nic, vlan_id, nodes_to_set))
+        logging.info("Put %s in vlan id %s for nodes %s" % (nic,
+                                                            vlan_id,
+                                                            nodes_to_set))
         api.set_nodes_vlan(site,
                            nodes_to_set,
                            nic,
@@ -84,6 +88,7 @@ def _mount_secondary_nics(desc, networks):
         # recording the mapping, just in case
         desc["_c_nics"].append((nic, network_role))
         idx = idx + 1
+
 
 def get_cluster_interfaces(cluster, extra_cond=lambda nic: True):
     site = ex5.get_cluster_site(cluster)
@@ -127,14 +132,14 @@ def concretize_nodes(resources, nodes):
     # force order to be a *function*
     snodes = sorted(nodes, key=lambda n: n.address)
     pools = mk_pools(snodes, lambda n: n.address.split('-')[0])
-    machines = c_resources["machines"]
+    machines = resources["machines"]
     for desc in machines:
         cluster = desc["cluster"]
         nb = desc["nodes"]
         c_nodes = pick_things(pools, cluster, nb)
         #  put concrete hostnames here
         desc["_c_nodes"] = [c_node.address for c_node in c_nodes]
-    return c_resources
+    return resources
 
 
 def concretize_networks(resources, vlans):

@@ -35,7 +35,12 @@ SCHEMA = {
                 "items": {"type": "string"},
                 "uniqueItems": True}
         },
-        "required": ["nodes", "cluster", "primary_network", "secondary_networks"]
+        "required": [
+            "nodes",
+            "cluster",
+            "primary_network",
+            "secondary_networks"
+        ]
     },
     "network": {
         "type": "object",
@@ -56,10 +61,12 @@ def validate_schema(resources):
     _validate_network_names(resources)
     # Third validate the network number on each nodes
 
+
 def _validate_network_names(resources):
     # every network role used in the machine descriptions should fit with one
     # in network
     pass
+
 
 def _validate_network_number(resources):
     # The number of network wanted for each node should fit the number of NIC

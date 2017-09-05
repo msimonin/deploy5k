@@ -8,6 +8,7 @@ ENV_NAME = "jessie-x64-min"
 JOB_NAME = "deploy5k"
 WALLTIME = "02:00:00"
 
+
 def reserve(resources,
             job_name=JOB_NAME,
             walltime=WALLTIME):
@@ -38,7 +39,8 @@ def deploy(c_resources, env_name=ENV_NAME, force_deploy=False):
         deployed, undeployed = utils._deploy(nodes, force_deploy, options)
         for desc in descs:
             desc["_c_deployed"] = list(set(desc["_c_nodes"]) & set(deployed))
-            desc["_c_undeployed"] = list(set(desc["_c_nodes"]) & set(undeployed))
+            desc["_c_undeployed"] = list(set(desc["_c_nodes"]) &
+                                         set(undeployed))
 
     return c_resources
 
@@ -48,5 +50,3 @@ def configure_network(c_resources, dhcp=False):
     c_resources = utils.mount_nics(c_resources)
     # TODO(msimonin): run dhcp if asked
     return c_resources
-
-
