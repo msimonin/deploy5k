@@ -3,12 +3,28 @@ import execo_g5k as ex5
 import execo_g5k.api_utils as api
 import logging
 from deploy5k.error import MissingNetworkError
+from deploy5k import remote
 from execo import Host
 from itertools import groupby
 from schema import PROD, KAVLAN_GLOBAL, KAVLAN_LOCAL, KAVLAN
 
 
-def is_prod(net):
+def dhcp_interfaces(c_resources):
+    # TODO(msimonin) add a filter
+    machines = c_resources["machines"]
+    for desc in machines:
+        nics = desc.get("_c_nics", [])
+        nics_list = [nic for nic, _ in nics]
+        ifconfig = ["ifconfig %s up" % nic for nic in nics_list]
+        remote.exec_command_on_nodes(
+            desc["_c_ssh_names"],
+            "%s ; dhclient -r %s" % (";".join(ifconfig), " ".join(nics_list)),
+            "Give an IP the the interfaces"
+         )
+
+
+def is_prod(network, networks):
+    net = lookup_networks(network, networks)
     return net["type"] == PROD
 
 
