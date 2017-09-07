@@ -4,6 +4,21 @@ from deploy5k.schema import PROD, KAVLAN
 import mock
 import unittest
 
+class TestGetNetwork(unittest.TestCase):
+
+    def test_no_concrete_network_yet(self):
+        expected_networks = [{"type": PROD, "role": "network1"}]
+        resources = {"networks": expected_networks}
+        networks = api.get_networks(resources)
+        self.assertItemsEqual(expected_networks, networks)
+
+    def test_concrete_network(self):
+        networks = [{"type": KAVLAN, "role": "network1", "_c_network": {"site": "nancy", "vlan_id": 1}}]
+        expected_networks = [{"type": KAVLAN, "role": "network1", "site": "nancy", "vlan_id": 1}]
+        resources = {"networks": networks}
+        networks = api.get_networks(resources)
+        self.assertItemsEqual(expected_networks, networks)
+
 class TestDeploy(unittest.TestCase):
 
     def test_prod(self):

@@ -9,6 +9,7 @@ JOB_NAME = "deploy5k"
 WALLTIME = "02:00:00"
 
 
+# TODO(msimonin). Let's think to a more OO design :)
 def reserve(resources,
             job_name=JOB_NAME,
             walltime=WALLTIME):
@@ -69,3 +70,30 @@ def configure_network(c_resources, dhcp=False):
     if dhcp:
         utils.dhcp_interfaces(c_resources)
     return c_resources
+
+def get_networks(c_resources):
+    networks = c_resources["networks"]
+    result = []
+    for net in networks:
+        current = {}
+        current.update(net)
+        _c_network = current.pop("_c_network", None)
+        if _c_network:
+            current.update(_c_network)
+        result.append(current)
+    return result
+
+
+def get_roles(c_resources):
+    machines = c_resources["machines"]
+    result = {}
+    for desc in machines:
+        roles = desc.get("role", [])
+        if roles != []:
+            roles = [roles]
+        roles.extend(desc.get("roles", []))
+        hosts = desc.get("_c_ssh_nodes", [])
+        for r in roles:
+            result.setdefault(r, [])
+            result[r].extend(hosts)
+    return result
