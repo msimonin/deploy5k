@@ -16,11 +16,10 @@ def dhcp_interfaces(c_resources):
         nics = desc.get("_c_nics", [])
         nics_list = [nic for nic, _ in nics]
         ifconfig = ["ifconfig %s up" % nic for nic in nics_list]
-        remote.exec_command_on_nodes(
-            desc["_c_ssh_names"],
-            "%s ; dhclient -r %s" % (";".join(ifconfig), " ".join(nics_list)),
-            "Give an IP the the interfaces"
-         )
+        cmd = "%s ; dhclient %s" % (";".join(ifconfig), " ".join(nics_list))
+        remote.exec_command_on_nodes(desc["_c_ssh_nodes"],
+                                     cmd,
+                                     cmd)
 
 
 def is_prod(network, networks):
@@ -97,7 +96,7 @@ def _mount_secondary_nics(desc, networks):
         logging.info("Put %s in vlan id %s for nodes %s" % (nic,
                                                             vlan_id,
                                                             nodes_to_set))
-        api.set_nodes_vlan(site,
+        api.set_nodes_vlan(net["site"],
                            nodes_to_set,
                            nic,
                            vlan_id)

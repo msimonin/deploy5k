@@ -14,13 +14,13 @@ def exec_command_on_nodes(nodes, cmd, label, conn_params=None):
     :param label:       string for debugging purpose.
     :param conn_params: connection parameters passed to the execo.Remote
                         function
-   """
+    """
     if isinstance(nodes, basestring):
         nodes = [nodes]
 
     if conn_params is None:
         conn_params = DEFAULT_CONN_PARAMS
 
-    logging.info("Running %s on %s " % (label, nodes))
+    logging.debug("Running %s on %s " % (label, nodes))
     remote = ex.Remote(cmd, nodes, conn_params)
     remote.run()
