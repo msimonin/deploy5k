@@ -80,7 +80,6 @@ def mount_nics(c_resources):
 
 def _mount_secondary_nics(desc, networks):
     cluster = desc["cluster"]
-    site = ex5.get_cluster_site(cluster)
     # get only the secondary interfaces
     nics = get_cluster_interfaces(cluster, lambda nic: not nic['mounted'])
     idx = 0
