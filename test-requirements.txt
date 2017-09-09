@@ -1,5 +1,4 @@
 flake8>=3.3.0
-#discover>=0.4.0
 pytest
 pytest-cov
 mock>=2.0.0

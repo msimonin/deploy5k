@@ -8,6 +8,7 @@ ENV_NAME = "jessie-x64-min"
 JOB_NAME = "deploy5k"
 WALLTIME = "02:00:00"
 
+
 class Resources:
 
     def __init__(self, resources):
@@ -69,7 +70,7 @@ class Resources:
                     desc["_c_deployed"])
 
     def configure_network(self, **kwargs):
-        dhcp =  kwargs.get("dhcp", False)
+        dhcp = kwargs.get("dhcp", False)
         utils.mount_nics(self.c_resources)
         # TODO(msimonin): run dhcp if asked
         if dhcp:
@@ -87,7 +88,6 @@ class Resources:
                 current.update(_c_network)
             result.append(current)
         return result
-
 
     def get_roles(self):
         machines = self.c_resources["machines"]
