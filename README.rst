@@ -1,3 +1,6 @@
+.. image:: https://badge.fury.io/py/deploy5k.svg
+    :target: https://badge.fury.io/py/deploy5k
+
 .. code-block:: python
 
     from deploy5k.api import Resources
