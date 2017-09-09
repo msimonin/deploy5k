@@ -46,7 +46,7 @@ def get_or_create_job(resources, job_name, walltime):
 
 def concretize_resources(resources, gridjob):
     nodes = ex5.get_oargrid_job_nodes(gridjob)
-    c_resources = concretize_nodes(resources, nodes)
+    concretize_nodes(resources, nodes)
 
     job_sites = ex5.get_oargrid_job_oar_jobs(gridjob)
     vlans = []
@@ -56,8 +56,7 @@ def concretize_resources(resources, gridjob):
             "site": site,
             "vlan_id": vlan_id} for vlan_id in vlan_ids])
 
-    c_resources = concretize_networks(c_resources, vlans)
-    return c_resources
+    concretize_networks(resources, vlans)
 
 
 def _deploy(nodes, force_deploy, options):
@@ -153,15 +152,13 @@ def concretize_nodes(resources, nodes):
         c_nodes = pick_things(pools, cluster, nb)
         #  put concrete hostnames here
         desc["_c_nodes"] = [c_node.address for c_node in c_nodes]
-    return resources
 
 
 def concretize_networks(resources, vlans):
-    c_resources = copy.deepcopy(resources)
     s_vlans = sorted(vlans, key=lambda v: (v["site"], v["vlan_id"]))
     pools = mk_pools(s_vlans,
                      lambda n: (n["site"], to_vlan_type(n["vlan_id"])))
-    for desc in c_resources["networks"]:
+    for desc in resources["networks"]:
         site = desc["site"]
         site_info = ex5.get_resource_attributes('/sites/%s' % site)
         n_type = desc["type"]
@@ -176,8 +173,6 @@ def concretize_networks(resources, vlans):
             desc["_c_network"] = networks[0]
             vlan_id = desc["_c_network"]["vlan_id"]
             desc["_c_network"].update(site_info["kavlans"][str(vlan_id)])
-
-    return c_resources
 
 
 def make_reservation(resources, job_name, walltime):

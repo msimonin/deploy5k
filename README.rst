@@ -1,8 +1,6 @@
 .. code-block:: python
 
-    from deploy5k.api import (reserve,
-                              deploy,
-                              configure_network)
+    from deploy5k.api import Resources
     import json
     import logging
     logging.basicConfig(level=logging.DEBUG)
@@ -11,32 +9,33 @@
         "machines": [{
             "role": "compute",
             "nodes": 1,
-            "cluster": "grisou",
+            "cluster": "parasilo",
             "primary_network": "network1",
-            "secondary_networks": ["network2", "network3"]
+            "secondary_networks": ["network2"]
         }, {
             "role": "control",
             "nodes": 1,
-            "cluster": "grisou",
+            "cluster": "parasilo",
             "primary_network": "network1",
-            "secondary_networks": ["network2", "network3"]
+            "secondary_networks": ["network2"]
         }],
-        "networks": [{"type": "prod", "role": "network1", "site": "nancy"},
-            {"type": "kavlan", "role": "network2", "site": "nancy"},
-            {"type": "kavlan-global", "role": "network3", "site": "lille"}]
+        "networks": [{"type": "prod", "role": "network1", "site": "rennes"},
+            {"type": "kavlan", "role": "network2", "site": "rennes"}]
     }
 
     r = Resources(resources)
     options = {
       "job_name": "test",
       "walltime": "01:00:00",
+    #  "force_deploy": True
     }
     # This
     r.reserve(**options)
     r.deploy(**options)
+    print(r.c_resources)
     r.configure_network(**options)
     # Or this
     # r.launch(**options)
 
-    r.get_roles()
-    r.get_networks()
+    print(r.get_roles())
+    print(r.get_networks())
