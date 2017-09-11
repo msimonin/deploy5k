@@ -1,4 +1,3 @@
-import copy
 import execo_g5k as ex5
 import execo_g5k.api_utils as api
 import logging
