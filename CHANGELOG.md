@@ -1,6 +1,7 @@
 # 0.0.2 (current)
 
-	* todo
+  * default to nfs images
+	* get roles now returns the configured nics
 
 # 0.0.1
 
