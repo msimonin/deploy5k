@@ -90,6 +90,12 @@ class Resources:
         return result
 
     def get_roles(self):
+        def denormalize(desc):
+            hosts = desc.get("_c_ssh_nodes", [])
+            nics = desc.get("_c_nics", [])
+            hosts = [{"host": h, "nics": nics} for h in hosts]
+            return hosts
+
         machines = self.c_resources["machines"]
         result = {}
         for desc in machines:
@@ -97,7 +103,7 @@ class Resources:
             if roles != []:
                 roles = [roles]
             roles.extend(desc.get("roles", []))
-            hosts = desc.get("_c_ssh_nodes", [])
+            hosts = denormalize(desc)
             for r in roles:
                 result.setdefault(r, [])
                 result[r].extend(hosts)
