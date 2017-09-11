@@ -4,7 +4,7 @@ import deploy5k.utils as utils
 import schema
 import copy
 
-ENV_NAME = "jessie-x64-min"
+ENV_NAME = "jessie-x64-nfs"
 JOB_NAME = "deploy5k"
 WALLTIME = "02:00:00"
 
