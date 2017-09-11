@@ -1,7 +1,11 @@
-# 0.0.2 (current)
+# 0.0.3 (current)
 
-  * default to nfs images
-	* get roles now returns the configured nics
+* TODO
+
+# 0.0.2 
+
+* default to nfs images
+* get roles now returns the configured nics
 
 # 0.0.1
 
