@@ -1,6 +1,6 @@
 # 0.0.3 (current)
 
-* TODO
+* add roles for network
 
 # 0.0.2 
 
