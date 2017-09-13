@@ -13,17 +13,17 @@
             "role": "compute",
             "nodes": 1,
             "cluster": "parasilo",
-            "primary_network": "network1",
-            "secondary_networks": ["network2"]
+            "primary_network": "n1",
+            "secondary_networks": ["n2"]
         }, {
             "role": "control",
             "nodes": 1,
             "cluster": "parasilo",
-            "primary_network": "network1",
-            "secondary_networks": ["network2"]
+            "primary_network": "1",
+            "secondary_networks": ["n2"]
         }],
-        "networks": [{"type": "prod", "role": "network1", "site": "rennes"},
-            {"type": "kavlan", "role": "network2", "site": "rennes"}]
+        "networks": [{"type": "prod", "id": "1","role": "network_1", "site": "rennes"},
+            {"type": "kavlan", "id": "n2", "roles": ["network_2", "network_3"],  "site": "rennes"}]
     }
 
     r = Resources(resources)
