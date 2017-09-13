@@ -22,7 +22,7 @@
             "primary_network": "1",
             "secondary_networks": ["n2"]
         }],
-        "networks": [{"type": "prod", "id": "1","role": "network_1", "site": "rennes"},
+        "networks": [{"type": "prod", "id": "n1","role": "network_1", "site": "rennes"},
             {"type": "kavlan", "id": "n2", "roles": ["network_2", "network_3"],  "site": "rennes"}]
     }
 
