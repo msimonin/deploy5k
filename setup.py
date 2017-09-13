@@ -9,9 +9,9 @@ def read(fname):
 
 setup(
     name='deploy5k',
-    version='0.0.3',
+    version='0.0.4',
     description='',
-    url='',
+    url='https://github.com/msimonin/deploy5k',
     author='msimonin',
     author_email='matthieu.simonin@inria.fr',
     license='GPL-3.0',
