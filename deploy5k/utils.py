@@ -71,9 +71,18 @@ def mount_nics(c_resources):
     for desc in machines:
         primary_nic = get_cluster_interfaces(desc["cluster"],
                                              lambda nic: nic['mounted'])[0]
-        desc["_c_nics"] = [(primary_nic, desc["primary_network"])]
+        net = lookup_networks(desc["primary_network"], networks)
+        desc["_c_nics"] = [(primary_nic, get_roles_as_list(net))]
         _mount_secondary_nics(desc, networks)
     return c_resources
+
+
+def get_roles_as_list(desc):
+    roles = desc.get("role", [])
+    if roles:
+        roles = [roles]
+    roles.extend(desc.get("roles", []))
+    return roles
 
 
 def _mount_secondary_nics(desc, networks):
@@ -82,8 +91,8 @@ def _mount_secondary_nics(desc, networks):
     nics = get_cluster_interfaces(cluster, lambda nic: not nic['mounted'])
     idx = 0
     desc["_c_nics"] = desc.get("_c_nics") or []
-    for network_role in desc["secondary_networks"]:
-        net = lookup_networks(network_role, networks)
+    for network_id in desc.get("secondary_networks", []):
+        net = lookup_networks(network_id, networks)
         if net["type"] == PROD:
             # nothing to do
             continue
@@ -98,7 +107,7 @@ def _mount_secondary_nics(desc, networks):
                            nic,
                            vlan_id)
         # recording the mapping, just in case
-        desc["_c_nics"].append((nic, network_role))
+        desc["_c_nics"].append((nic, get_roles_as_list(net)))
         idx = idx + 1
 
 
@@ -115,8 +124,8 @@ def get_cluster_interfaces(cluster, extra_cond=lambda nic: True):
     return nics
 
 
-def lookup_networks(network_role, networks):
-    match = [net for net in networks if net["role"] == network_role]
+def lookup_networks(network_id, networks):
+    match = [net for net in networks if net["id"] == network_id]
     # if it has been validated the following is valid
     return match[0]
 

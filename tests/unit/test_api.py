@@ -8,15 +8,15 @@ import unittest
 class TestGetNetwork(unittest.TestCase):
 
     def test_no_concrete_network_yet(self):
-        expected_networks = [{"type": PROD, "role": "network1"}]
+        expected_networks = [{"type": PROD, "id": "network1"}]
         schema.validate = mock.Mock()
         r = Resources({"networks": expected_networks})
         networks = r.get_networks()
         self.assertItemsEqual(expected_networks, networks)
 
     def test_concrete_network(self):
-        networks = [{"type": KAVLAN, "role": "network1", "_c_network": {"site": "nancy", "vlan_id": 1}}]
-        expected_networks = [{"type": KAVLAN, "role": "network1", "site": "nancy", "vlan_id": 1}]
+        networks = [{"type": KAVLAN, "id": "network1", "_c_network": {"site": "nancy", "vlan_id": 1}}]
+        expected_networks = [{"type": KAVLAN, "id": "network1", "site": "nancy", "vlan_id": 1}]
         schema.validate = mock.Mock()
         r = Resources({"networks": networks})
         networks = r.get_networks()
@@ -32,7 +32,7 @@ class TestDeploy(unittest.TestCase):
                 "_c_nodes": nodes,
                 "primary_network": "network1"
             }],
-            "networks": [{"type": PROD, "role": "network1"}]
+            "networks": [{"type": PROD, "id": "network1"}]
         })
         deployed = set(["foocluster-1", "foocluster-2"])
         undeployed = set()
@@ -50,7 +50,7 @@ class TestDeploy(unittest.TestCase):
                 "_c_nodes": nodes,
                 "primary_network": "network1"
             }],
-            "networks": [{"type": KAVLAN, "role": "network1", "_c_network": {"site": "rennes", "vlan_id": 4}}]
+            "networks": [{"type": KAVLAN, "id": "network1", "_c_network": {"site": "rennes", "vlan_id": 4}}]
         })
         deployed = set(["foocluster-1", "foocluster-2"])
         undeployed = set()
@@ -74,8 +74,8 @@ class TestDeploy(unittest.TestCase):
                 }
             ],
             "networks": [
-                {"type": PROD, "role": "network1"},
-                {"type": KAVLAN, "role": "network2", "_c_network": {"site": "rennes", "vlan_id": 4}}]
+                {"type": PROD, "id": "network1"},
+                {"type": KAVLAN, "id": "network2", "_c_network": {"site": "rennes", "vlan_id": 4}}]
         })
         d_foo = set(["foocluster-1"])
         u_foo = set(nodes_foo) - d_foo

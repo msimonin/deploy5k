@@ -1,13 +1,36 @@
 from deploy5k import utils
 from deploy5k.error import MissingNetworkError
-from deploy5k.schema import KAVLAN
+from deploy5k.schema import KAVLAN, PROD
 from execo import Host
 from execo_g5k import api_utils as api
 import copy
 import mock
 import unittest
 import execo_g5k as ex5
+
+# TODO(msimonin): use patch
 class TestMountNics(unittest.TestCase):
+
+    def setUp(self):
+        self.c_resources = {
+            "machines":[{
+                "primary_network": "network_1",
+                "cluster": "foo"
+            }],
+            "networks":[{
+                "id": "network_1",
+                "roles": ["n1", "n2"]
+            }]
+        }
+
+    @mock.patch("deploy5k.utils._mount_secondary_nics")
+    @mock.patch("deploy5k.utils.get_cluster_interfaces", return_value=["eth0"])
+    def test_primary(self, mock__mount_secondary_nics, mock_get_cluster_interfaces):
+        utils.mount_nics(self.c_resources)
+        self.assertItemsEqual([("eth0", ["n1", "n2"])], self.c_resources["machines"][0]["_c_nics"])
+
+
+class TestMountSecondaryNics(unittest.TestCase):
 
     def test_exact(self):
         desc = {
@@ -18,21 +41,24 @@ class TestMountNics(unittest.TestCase):
         networks = [
             {
                 "type": KAVLAN,
-                "role": "network_1",
+                "id": "network_1",
+                "role": "net_role_1",
                 "site": "rennes",
                 "_c_network": {"vlan_id": 4, "site": "rennes"}
             },
             {
                 "type": KAVLAN,
-                "role": "network_2",
+                "id": "network_2",
+                "roles": ["net_role_2", "net_role_3"],
                 "site": "rennes",
                 "_c_network": {"vlan_id": 5, "site": "rennes"}},
         ]
-        utils.get_cluster_interfaces = mock.Mock(return_value=["eth0", "eth1"])
-        ex5.get_cluster_site = mock.Mock(return_value="rennes")
-        api.set_nodes_vlan = mock.Mock()
+        utils.get_cluster_interfaces = mock.MagicMock(return_value=["eth0", "eth1"])
+        ex5.get_cluster_site = mock.MagicMock(return_value="rennes")
+        api.set_nodes_vlan = mock.MagicMock()
         utils._mount_secondary_nics(desc, networks)
-        self.assertItemsEqual([("eth0", "network_1"), ("eth1", "network_2")], desc["_c_nics"])
+        self.assertItemsEqual([("eth0", ["net_role_1"]), ("eth1", ["net_role_2", "net_role_3"])], desc["_c_nics"])
+
 
 class TestConcretizeNetwork(unittest.TestCase):
 
@@ -41,18 +67,28 @@ class TestConcretizeNetwork(unittest.TestCase):
             "networks":[{
                 "type": KAVLAN,
                 "site": "rennes",
-                "role": "role1"
+                "id": "role1"
             }, {
                 "type": KAVLAN,
                 "site": "rennes",
-                "role": "role2"
+                "id": "role2"
             }]
         }
-        ex5.get_resource_attributes = mock.Mock(return_value={'kavlans': {'4': {}, '5': {}}})
+        ex5.get_resource_attributes = mock.MagicMock(return_value={'kavlans': {'default': {},'4': {}, '5': {}}})
 
     def test_act(self):
         networks = [
             { "site": "rennes", "vlan_id": 4},
+            { "site": "rennes", "vlan_id": 5}
+        ]
+        utils.concretize_networks(self.resources, networks)
+        self.assertEquals(networks[0], self.resources["networks"][0]["_c_network"])
+        self.assertEquals(networks[1], self.resources["networks"][1]["_c_network"])
+
+    def test_prod(self):
+        self.resources["networks"][0]["type"] = PROD
+        networks = [
+            { "site": "rennes", "vlan_id": None},
             { "site": "rennes", "vlan_id": 5}
         ]
         utils.concretize_networks(self.resources, networks)

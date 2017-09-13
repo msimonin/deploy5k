@@ -99,10 +99,7 @@ class Resources:
         machines = self.c_resources["machines"]
         result = {}
         for desc in machines:
-            roles = desc.get("role", [])
-            if roles != []:
-                roles = [roles]
-            roles.extend(desc.get("roles", []))
+            roles = utils.get_roles_as_list(desc)
             hosts = denormalize(desc)
             for r in roles:
                 result.setdefault(r, [])

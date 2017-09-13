@@ -38,18 +38,21 @@ SCHEMA = {
         "required": [
             "nodes",
             "cluster",
-            "primary_network",
-            "secondary_networks"
+            "primary_network"
         ]
     },
     "network": {
         "type": "object",
         "properties": {
+            "id": {"type": "string"},
             "type": {"enum": NETWORK_TYPES},
-            "role": {"type": "string"},
+            "anyOf": [
+                {"roles": {"type": "array", "items": {"type": "string"}}},
+                {"role": {"type": "string"}}
+            ],
             "site": {"type": "string"}
         },
-        "required": ["type", "site"]
+        "required": ["id", "type", "site"]
     }
 }
 
